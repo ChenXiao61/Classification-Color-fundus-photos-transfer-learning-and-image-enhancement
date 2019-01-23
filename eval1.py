@@ -13,7 +13,6 @@ JPEG_DATA_TENSOR_NAME = 'DecodeJpeg/contents:0'  # 图像输入张量对应的�
 
 # 测试数据
 file_path = './11.JPG'
-y_test = [1]
 
 # 读取数据
 def restore_model(testPic):
@@ -55,8 +54,7 @@ def restore_model(testPic):
             all_predictions = sess.run(predictions, {input_x: bottleneck_values})
             return all_predictions
 
-# 如果提供了标签则打印正确率
-#if y_test is not None:
+# print the result of prediction on one photograph
 def application():
     testNum = input("input the number of test pictures:")
     for i in range(int(testNum)):
