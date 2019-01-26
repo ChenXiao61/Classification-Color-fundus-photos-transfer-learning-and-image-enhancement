@@ -29,13 +29,13 @@ model/
     imagenet_comp_graph_label_strings.txt     
     tensorflow_inception_graph.pb     
 train.py
-train.py used for training the model
+train.py is used for training the model
 
-eval1.py used for predicting one prediction
+eval1.py is used for predicting one prediction
 
-eval2.py used for batch prediction and calculating accuracy, specificity, sensitivity
+eval2.py is used for batch prediction and calculating accuracy, specificity, sensitivity
 
-eval3.py used to save the probability of the model predicting each piece
+eval3.py is used to save the probability of the model predicting each piece
 roc_curve.py draw the ROC curve and calculate the AUC
 
 
