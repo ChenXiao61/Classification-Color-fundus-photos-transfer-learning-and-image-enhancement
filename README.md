@@ -2,24 +2,26 @@
 We combined the image enhancement algorithm with transfer learning to achieve the classification of color fundus photo.
 
 
-首先对数据进行删除、裁剪处理
+Firstly,we delete the meaningless photographs,crop the black area in the photographs use adjustbrightness.py to improve breghtness
 
-然后使用batchSplitGchannel.py对预处理后的图片提取绿通道，再运行CLAHE.py进行限制对比度自适应直方图均衡化
+then,use batchSplitGchannel.py and CLAHE.py.
 
-Inception-V3模型参数下载网址：https://storage.googleapis.com/download.tensorflow.org/models/inception_dec_2015.zip
+Using flip.py and rotate.py to data augmentation.
 
-下载以后有两个文件1.imagenet_comp_graph_label_strings.txt 2.tensorflow_inception_graph.pb
+The URL of Inception-V3 model parameters：https://storage.googleapis.com/download.tensorflow.org/models/inception_dec_2015.zip
 
-将模型参数下载好之后model/ 文件夹下，还需要新建一个 tmp/bottleneck/ 文件夹用于存放每张图片通过 Inception-v3 模型计算得到的特征向量。
+There are two files :1.imagenet_comp_graph_label_strings.txt 2.tensorflow_inception_graph.pb
 
-目录结构如下：
+Put them in model/ file，and creat tmp/bottleneck/ file Used to store the vectors for each image calculated by the Inception-v3 model
+
+Directory Structure：
 
 transfer-learning/
 
 data/  
     fundus_photos/       
-        0/   #正常眼底图片           
-        1/   #异常眼底图片            
+        0/   #Normal fundus photographs           
+        1/   #Abnormal fundus photographs            
     tmp/      
         bottleneck/          
             ......              
@@ -27,13 +29,14 @@ model/
     imagenet_comp_graph_label_strings.txt     
     tensorflow_inception_graph.pb     
 train.py
-train.py用于模型训练
+train.py used for training the model
 
-eval1.py用于模型单张预测
+eval1.py used for predicting one prediction
 
-eval2.py用于批量预测计算准确度，特异度，灵敏度
+eval2.py used for batch prediction and calculating accuracy, specificity, sensitivity
 
-eval3.py用于保存模型预测每张的概率，画出ROC曲线和计算AUC
+eval3.py used to save the probability of the model predicting each piece
+roc_curve.py draw the ROC curve and calculate the AUC
 
 
 
