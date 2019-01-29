@@ -1,4 +1,4 @@
-'''本代码是对单张图片进行预测，注意runs后的路径，自己提供file_path，y_test的标签值，输出正常和异常眼底病变两种'''
+'''本代码是对指定图片数量进行逐个预测，注意runs后的路径，自己提供file_path，y_test的标签值，输出正常和异常眼底病变两种'''
 
 import tensorflow as tf
 import numpy as np
@@ -56,11 +56,11 @@ def restore_model(testPic):
 
 # print the result of prediction on one photograph
 def application():
-    testNum = input("input the number of test pictures:")
+    testNum = input("input the number of test pictures:")#输入图片数量
     for i in range(int(testNum)):
-        testPic = input("the path of test picture:")
+        testPic = input("the path of test picture:")#输入图片路径
         preValue = restore_model(testPic)
-        if preValue == [0]:
+        if preValue == [0]:#0代表正常分类
             print("Normal")
 
         else:
