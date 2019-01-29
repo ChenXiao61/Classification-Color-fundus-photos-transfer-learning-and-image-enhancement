@@ -13,7 +13,7 @@ MODEL_FILE = 'tensorflow_inception_graph.pb'
 CACHE_DIR = './data/tmp/bottleneck'
 INPUT_DATA = './data/fundus_photo'
 VALIDATION_PERCENTAGE = 10
-TEST_PERCENTAGE = 2
+TEST_PERCENTAGE = 10
 
 
 BOTTLENECK_TENSOR_SIZE = 2048  # inception-v3模型瓶颈层的节点个数
@@ -29,7 +29,6 @@ LEARNING_RATE_DECAY = 0.99
 STEPS = 50000
 
 BATCH = 256
-All_Example = 5780
 
 CHECKPOINT_EVERY = 100
 NUM_CHECKPOINTS = 5
