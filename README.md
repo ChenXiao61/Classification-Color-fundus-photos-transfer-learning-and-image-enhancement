@@ -2,11 +2,11 @@
 We combined the image enhancement algorithm with transfer learning to achieve the classification of color fundus photo.
 
 
-Firstly,we delete the meaningless photographs,crop the black area in the photographs use adjustbrightness.py to improve breghtness
+Firstly,we delete the meaningless photographs,crop the black area in the photographs and use adjustbrightness.py to improve brightness
 
 then,use batchSplitGchannel.py and CLAHE.py.
 
-Using flip.py and rotate.py to data augmentation.
+Use flip.py and rotate.py to data augmentation.
 
 The URL of Inception-V3 model parameters：https://storage.googleapis.com/download.tensorflow.org/models/inception_dec_2015.zip
 
@@ -36,7 +36,7 @@ eval1.py is used for predicting one prediction
 eval2.py is used for batch prediction and calculating accuracy, specificity, sensitivity
 
 eval3.py is used to save the probability of the model predicting each piece
-roc_curve.py draw the ROC curve and calculate the AUC
+roc_curve.py draws the ROC curve and calculates the AUC
 
 
 
