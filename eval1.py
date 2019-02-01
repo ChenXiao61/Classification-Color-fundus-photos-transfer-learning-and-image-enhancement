@@ -1,66 +1,71 @@
-'''本代码是对指定图片数量进行逐个预测，注意runs后的路径，自己提供file_path，y_test的标签值，输出正常和异常眼底病变两种'''
+'''
+This code is to predict the number of specified pictures one by one, 
+pay attention to the path after runs, provide the file_path, y_test tag value, 
+output normal and abnormal fundus lesions
+'''
 
 import tensorflow as tf
 import numpy as np
 
-# 模型目录
-CHECKPOINT_DIR = './runs/1546517609/checkpoints'
+# Model catalog
+CHECKPOINT_DIR = './runs/1546517609/checkpoints'#save model after training
 INCEPTION_MODEL_FILE = 'model/tensorflow_inception_graph.pb'
 
-# inception-v3模型参数
-BOTTLENECK_TENSOR_NAME = 'pool_3/_reshape:0'  # inception-v3模型中代表瓶颈层结果的张量名称
-JPEG_DATA_TENSOR_NAME = 'DecodeJpeg/contents:0'  # 图像输入张量对应的名称
+# the parameters of inception-v3 model
+BOTTLENECK_TENSOR_NAME = 'pool_3/_reshape:0'  # Tensor name representing the outcome of the bottleneck layer in the inception-v3 model
+JPEG_DATA_TENSOR_NAME = 'DecodeJpeg/contents:0'  # The name corresponding to the image input tensor
 
-# 测试数据
+# path of new test set
 file_path = './11.JPG'
 
-# 读取数据
+# read images
 def restore_model(testPic):
     image_data = tf.gfile.FastGFile(testPic, 'rb').read()
 
-    # 评估
+    # evaluate
     checkpoint_file = tf.train.latest_checkpoint(CHECKPOINT_DIR)
     with tf.Graph().as_default() as graph:
         with tf.Session().as_default() as sess:
-            # 读取训练好的inception-v3模型
+            # read the trained inception-v3 model
             with tf.gfile.FastGFile(INCEPTION_MODEL_FILE, 'rb') as f:
                 graph_def = tf.GraphDef()
                 graph_def.ParseFromString(f.read())
 
-            # 加载inception-v3模型，并返回数据输入张量和瓶颈层输出张量
+            # laod inception-v3 model，and return the data input tensor and the bottleneck layer output tensor
             bottleneck_tensor, jpeg_data_tensor = tf.import_graph_def(
                 graph_def,
                 return_elements=[BOTTLENECK_TENSOR_NAME, JPEG_DATA_TENSOR_NAME])
 
-            # 使用inception-v3处理图片获取特征向量
+            # Use inception-v3 to process images to obtain feature vectors
             bottleneck_values = sess.run(bottleneck_tensor,
                                          {jpeg_data_tensor: image_data})
-            # 将四维数组压缩成一维数组，由于全连接层输入时有batch的维度，所以用列表作为输入
+            # Compress a four-dimensional array into a one-dimensional array. Since the fully connected 
+            #layer has a batch dimension when inputting, use the list as input.
             bottleneck_values = [np.squeeze(bottleneck_values)]
 
-            # 加载元图和变量
+            # loading graph and variables
             saver = tf.train.import_meta_graph('{}.meta'.format(checkpoint_file))
             saver.restore(sess, checkpoint_file)
 
-            # 通过名字从图中获取输入占位符
+            # Get the input placeholder from the diagram by name
             input_x = graph.get_operation_by_name(
                 'BottleneckInputPlaceholder').outputs[0]
 
-            # 我们想要评估的tensors
+            # The tensors we want to evaluate
             predictions = graph.get_operation_by_name('evaluation/ArgMax').outputs[0]
 
-            # 收集预测值
+            # Collecting predicted values
             all_predictions = []
             all_predictions = sess.run(predictions, {input_x: bottleneck_values})
             return all_predictions
 
 # print the result of prediction on one photograph
 def application():
-    testNum = input("input the number of test pictures:")#输入图片数量
+    testNum = input("input the number of test pictures:")#Enter the number of images
     for i in range(int(testNum)):
-        testPic = input("the path of test picture:")#输入图片路径
+        testPic = input("the path of test picture:")#Enter the path of oneimages
         preValue = restore_model(testPic)
-        if preValue == [0]:#0代表正常分类
+        if preValue == [0]:#0 represent normal by the label
             print("Normal")
 
         else:
@@ -74,6 +79,3 @@ def main():
 if __name__ =='__main__':
     main()
 
-#correct_predictions = float(sum(all_predictions == y_test))
-#print('\nTotal number of test examples: {}'.format(len(y_test)))
-#print('Accuracy: {:g}'.format(correct_predictions / float(len(y_test))))
