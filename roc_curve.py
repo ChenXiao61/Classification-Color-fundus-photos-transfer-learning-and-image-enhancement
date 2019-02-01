@@ -1,7 +1,6 @@
-'''代码使用说明:
-
-    xiugai  range  de daxiao 给出模型的标签和对应分类的预测概率的文件地址，即可画出ROC 曲线
-
+'''
+    The ROC curve can be drawn by giving the model's label and 
+    the file address of the predicted probability of the corresponding classification.
 '''
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
