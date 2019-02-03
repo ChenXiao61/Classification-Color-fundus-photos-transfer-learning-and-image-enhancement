@@ -1,44 +1,42 @@
-#代码使用说明：
 '''
-1注意runs的目录
-2代码的输入是图片的路径，图片格式为**0.JPG或者**1.JPG，即带有标签的图片名
+1 Note the directory of runs
+2 The input of the code is the path of the image.The format of the image is **0.JPG or **1.JPG, 
+which is the name of the image with the label.
 
 '''
 
 import tensorflow as tf
 import numpy as np
 import os
-# 模型目录
+# Model catalog
 CHECKPOINT_DIR = './runs/1547178289/checkpoints'
-INCEPTION_MODEL_FILE = 'model/tensorflow_inception_graph.pb' # inception-v3模型参数
+INCEPTION_MODEL_FILE = 'model/tensorflow_inception_graph.pb' # Inception-v3 model parameters
 
-BOTTLENECK_TENSOR_NAME = 'pool_3/_reshape:0' # inception-v3模型中代表瓶颈层结果的张量名称
-JPEG_DATA_TENSOR_NAME = 'DecodeJpeg/contents:0' # 图像输入张量对应的名称 # 测试数据
+BOTTLENECK_TENSOR_NAME = 'pool_3/_reshape:0' # Tensor name representing the outcome of the bottleneck layer in the inception-v3 model
+JPEG_DATA_TENSOR_NAME = 'DecodeJpeg/contents:0' # The name corresponding to the image input tensor 
 
-#file_path = './data/flower_photos/tulips/11746080_963537acdc.jpg'
-#y_test = [4]
-
+# Test Data
 file_path = './test4/1/'
 #y_test = [1,1,1,1,1,1,1]
 #,1,1,1,1,1,1,1,1,0,0,0
 
-# 读取数据
+# Read data
 #image_data = tf.gfile.FastGFile(file_path, 'rb').read()
 
-# 评估
+# Evaluate
 checkpoint_file = tf.train.latest_checkpoint(CHECKPOINT_DIR)
 
 with tf.Graph().as_default() as graph:
     with tf.Session().as_default() as sess:
-        # 读取训练好的inception-v3模型
+        # Read the trained inception-v3 model
         with tf.gfile.FastGFile(INCEPTION_MODEL_FILE, 'rb') as f:
             graph_def = tf.GraphDef()
-            graph_def.ParseFromString(f.read()) # 加载inception-v3模型，并返回数据输入张量和瓶颈层输出张量
+            graph_def.ParseFromString(f.read()) # Load the inception-v3 model and return the data input tensor and bottleneck layer output tensor
 
         bottleneck_tensor, jpeg_data_tensor = tf.import_graph_def( graph_def,
             return_elements=[BOTTLENECK_TENSOR_NAME, JPEG_DATA_TENSOR_NAME])
 
-        # 使用inception-v3处理图片获取特征向量
+        # Use inception-v3 to process images to obtain feature vectors
         TP = 0
         FN = 0
         FP = 0
@@ -50,19 +48,20 @@ with tf.Graph().as_default() as graph:
                 i=i+1
                 image_data = tf.gfile.FastGFile(os.path.join(root, file) , 'rb').read()
                 bottleneck_values = sess.run(bottleneck_tensor, {jpeg_data_tensor: image_data})
-                # 将四维数组压缩成一维数组，由于全连接层输入时有batch的维度，所以用列表作为输入
+                # Compress a four-dimensional array into a one-dimensional array.
+                #Since the fully connected layer has a batch dimension when inputting, use the list as input.
                 bottleneck_values = [np.squeeze(bottleneck_values)]
-                # 加载元图和变量
+                # load graph and variables
                 saver = tf.train.import_meta_graph('{}.meta'.format(checkpoint_file))
                 saver.restore(sess, checkpoint_file)
 
-                # 通过名字从图中获取输入占位符
+                # Get the input placeholder from the diagram by name
                 input_x = graph.get_operation_by_name('BottleneckInputPlaceholder').outputs[0]
 
-                # 我们想要评估的tensors
+                # The tensors we want to evaluate
                 predictions = graph.get_operation_by_name('evaluation/ArgMax').outputs[0]
 
-                # 收集预测值
+                # Collecting predicted values
                 all_predictions = []
 
                 all_predictions = sess.run(predictions, {input_x: bottleneck_values})
@@ -70,8 +69,8 @@ with tf.Graph().as_default() as graph:
                 (filepath, tempfilename) = os.path.split(file)
                 print( i,":",all_predictions,tempfilename)
 
-                if (file[len(file) - 5] == '0'):#如果标签为0
-                    if (all_predictions == 0):#如果预测为0
+                if (file[len(file) - 5] == '0'):# If the label is 0
+                    if (all_predictions == 0):# If the label is 1
                         TP = TP + 1
                     else:
                         FN = FN + 1
@@ -80,7 +79,7 @@ with tf.Graph().as_default() as graph:
                         FP = FP + 1
                     else:
                         TN = TN + 1
-# 如果提供了标签则打印正确率
+# Print correct rate if label is provided
 
 if file_path is not None:
 
@@ -95,8 +94,8 @@ if file_path is not None:
     TPR = float(TP/(TP+FN))#sensitivity召回率 （TPR，真阳性率，灵敏度，召回率）
     TNR = float(TN/(FP+TN))#specificity（TNR，真阴性率，特异度）
 
-    FNR = float(FN/(TP+FN))#漏诊率，（1-sensitivity）
-    FPR = float(FP / (TN + FP) ) # 假正例率(1-specificity),假阳性率，误诊率
+    FNR = float(FN/(TP+FN))#Missed diagnosis rate，（1-sensitivity）
+    FPR = float(FP / (TN + FP) ) # False positive rate(1-specificity),假阳性率，误诊率
     #print(sum(all_predictions))
     print('\nTotal number of test examples: {}'.format(y_test))
 
