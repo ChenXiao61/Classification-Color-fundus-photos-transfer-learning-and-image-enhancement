@@ -16,11 +16,11 @@ VALIDATION_PERCENTAGE = 10
 TEST_PERCENTAGE = 10
 
 
-BOTTLENECK_TENSOR_SIZE = 2048  # inception-v3模型瓶颈层的节点个数
-BOTTLENECK_TENSOR_NAME = 'pool_3/_reshape:0'  # inception-v3模型中代表瓶颈层结果的张量名称
-JPEG_DATA_TENSOR_NAME = 'DecodeJpeg/contents:0'  # 图像输入张量对应的名称
+BOTTLENECK_TENSOR_SIZE = 2048  # Number of nodes in the inception-v3 model bottleneck layer
+BOTTLENECK_TENSOR_NAME = 'pool_3/_reshape:0'  # Tensor name representing the outcome of the bottleneck layer in the inception-v3 model
+JPEG_DATA_TENSOR_NAME = 'DecodeJpeg/contents:0'  #The name corresponding to the image input tensor
 
-# 神经网络的训练参数
+# Training parameters of neural network
 BASE_LEARNING_RATE = 0.1
 LEARNING_RATE = 0.01
 #LEARNING_RATE_BASE = 0.01
@@ -34,36 +34,36 @@ CHECKPOINT_EVERY = 100
 NUM_CHECKPOINTS = 5
 
 
-# 从数据文件夹中读取所有的图片列表并按训练、验证、测试分开
+# Read all the image lists from the data folder and separate them by training set, validation set, and test set.
 def create_image_lists(validation_percentage, test_percentage):
-    result = {}  # 保存所有图像。key为类别名称。value也是字典，存储了所有的图片名称
-    sub_dirs = [x[0] for x in os.walk(INPUT_DATA)]  # 获取所有子目录
-    is_root_dir = True  # 第一个目录为当前目录，需要忽略
+    result = {}  # Save all images. Key is the category name. Value is also a dictionary, storing all the name of images 
+    sub_dirs = [x[0] for x in os.walk(INPUT_DATA)]  # Get all subdirectories
+    is_root_dir = True  # The first directory is the current directory and needs to be ignored.
 
-    # 分别对每个子目录进行操作
+    # Operate each subdirectory separately
     for sub_dir in sub_dirs:
         if is_root_dir:
             is_root_dir = False
             continue
 
-        # 获取当前目录下的所有有效图片
+        # Get all valid images in the current directory
         extensions = {'jpg', 'jpeg', 'JPG', 'JPEG'}
-        file_list = []  # 存储所有图像
-        dir_name = os.path.basename(sub_dir)  # 获取路径的最后一个目录名字
+        file_list = []  # Save all images
+        dir_name = os.path.basename(sub_dir)  # Get the last directory name of the path
         for extension in extensions:
             file_glob = os.path.join(INPUT_DATA, dir_name, '*.' + extension)
             file_list.extend(glob.glob(file_glob))
         if not file_list:
             continue
 
-        # 将当前类别的图片随机分为训练数据集、测试数据集、验证数据集
-        label_name = dir_name.lower()  # 通过目录名获取类别的名称
+        # Randomly divide the pictures of the current category into training set, test set, and validaation set.
+        label_name = dir_name.lower()  # Get the name of the category by directory name
         training_images = []
         testing_images = []
         validation_images = []
         for file_name in file_list:
-            base_name = os.path.basename(file_name)  # 获取该图片的名称
-            chance = np.random.randint(100)  # 随机产生100个数代表百分比
+            base_name = os.path.basename(file_name)  # Get the name of the image
+            chance = np.random.randint(100)  # Randomly generate 100 numbers to represent percentage
             if chance < validation_percentage:
                 validation_images.append(base_name)
             elif chance < (validation_percentage + test_percentage):
@@ -71,7 +71,7 @@ def create_image_lists(validation_percentage, test_percentage):
             else:
                 training_images.append(base_name)
 
-        # 将当前类别的数据集放入结果字典
+        # Put the data set of the current category into the result dictionary
         result[label_name] = {
             'dir': dir_name,
             'training': training_images,
@@ -79,38 +79,38 @@ def create_image_lists(validation_percentage, test_percentage):
             'validation': validation_images
         }
 
-    # 返回整理好的所有数据
+    # Return all the data that has been sorted out
     return result
 
 
-# 通过类别名称、所属数据集、图片编号获取一张图片的地址
+# Get the address of an image by category name, dataset, and image number
 def get_image_path(image_lists, image_dir, label_name, index, category):
-    label_lists = image_lists[label_name]  # 获取给定类别中的所有图片
-    category_list = label_lists[category]  # 根据所属数据集的名称获取该集合中的全部图片
-    mod_index = index % len(category_list)  # 规范图片的索引
-    base_name = category_list[mod_index]  # 获取图片的文件名
-    sub_dir = label_lists['dir']  # 获取当前类别的目录名
-    full_path = os.path.join(image_dir, sub_dir, base_name)  # 图片的绝对路径
+    label_lists = image_lists[label_name]  # Get all the images in a given category
+    category_list = label_lists[category]  # Get all the images in the collection based on the name of the dataset it belongs to
+    mod_index = index % len(category_list)  # Normalize the index of image
+    base_name = category_list[mod_index]  # Get the file name of the image
+    sub_dir = label_lists['dir']  # Get the directory name of the current category
+    full_path = os.path.join(image_dir, sub_dir, base_name)  # Absolute path of the image
     return full_path
 
 
-# 通过类别名称、所属数据集、图片编号获取特征向量值的地址
+# Get the address of the feature vector value by category name, data set, and image number
 def get_bottleneck_path(image_lists, label_name, index, category):
     return get_image_path(image_lists, CACHE_DIR, label_name, index,
                           category) + '.txt'
-# 使用inception-v3处理图片获取特征向量
+# Use inception-v3 to process images to obtain feature vectors
 def run_bottleneck_on_image(sess, image_data, image_data_tensor,
                             bottleneck_tensor):
     bottleneck_values = sess.run(bottleneck_tensor,
                                  {image_data_tensor: image_data})
-    bottleneck_values = np.squeeze(bottleneck_values)  # 将四维数组压缩成一维数组
+    bottleneck_values = np.squeeze(bottleneck_values)  # Compress a four-dimensional array into a one-dimensional array
     return bottleneck_values
 
 
-# 获取一张图片经过inception-v3模型处理后的特征向量
+# Get the feature vector of an image processed by the inception-v3 model
 def get_or_create_bottleneck(sess, image_lists, label_name, index, category,
                              jpeg_data_tensor, bottleneck_tensor):
-    # 获取一张图片对应的特征向量文件的路径
+    # Get the path of the feature vector file corresponding to a image
     label_lists = image_lists[label_name]
     sub_dir = label_lists['dir']
     sub_dir_path = os.path.join(CACHE_DIR, sub_dir)
@@ -119,37 +119,37 @@ def get_or_create_bottleneck(sess, image_lists, label_name, index, category,
     bottleneck_path = get_bottleneck_path(image_lists, label_name, index,
                                           category)
 
-    # 如果该特征向量文件不存在，则通过inception-v3模型计算并保存
+    # If the feature vector file does not exist, it is calculated and saved by the inception-v3 model.
     if not os.path.exists(bottleneck_path):
         image_path = get_image_path(image_lists, INPUT_DATA, label_name, index,
-                                    category)  # 获取图片原始路径
-        image_data = gfile.FastGFile(image_path, 'rb').read()  # 获取图片内容
+                                    category)  # Get the original path of the image
+        image_data = gfile.FastGFile(image_path, 'rb').read()  # Get image content
         bottleneck_values = run_bottleneck_on_image(
             sess, image_data, jpeg_data_tensor,
-            bottleneck_tensor)  # 通过inception-v3计算特征向量
+            bottleneck_tensor)  # Calculating feature vector by inception-v3
 
-        # 将特征向量存入文件
+        # Save the feature vector to a file
         bottleneck_string = ','.join(str(x) for x in bottleneck_values)
         with open(bottleneck_path, 'w') as bottleneck_file:
             bottleneck_file.write(bottleneck_string)
     else:
-        # 否则直接从文件中获取图片的特征向量
+        # Otherwise, get the feature vector of the image directly from the file.
         with open(bottleneck_path, 'r') as bottleneck_file:
             bottleneck_string = bottleneck_file.read()
         bottleneck_values = [float(x) for x in bottleneck_string.split(',')]
 
-    # 返回得到的特征向量
+    # Return the resulting feature vector
     return bottleneck_values
 
 
-# 随机获取一个batch图片作为训练数据
+# Randomly get a batch image as training data
 def get_random_cached_bottlenecks(sess, n_classes, image_lists, how_many,
                                   category, jpeg_data_tensor,
                                   bottleneck_tensor):
     bottlenecks = []
     ground_truths = []
     for _ in range(how_many):
-        # 随机一个类别和图片编号加入当前的训练数据
+        # Randomly add a category and image number to the current training data
         label_index = random.randrange(n_classes)
         label_name = list(image_lists.keys())[label_index]
         image_index = random.randrange(65536)
@@ -162,14 +162,13 @@ def get_random_cached_bottlenecks(sess, n_classes, image_lists, how_many,
         ground_truths.append(ground_truth)
     return bottlenecks, ground_truths
 
-# 获取全部的测试数据
-
+# Get all the test data
 def get_test_bottlenecks(sess, image_lists, n_classes, jpeg_data_tensor,
                          bottleneck_tensor):
     bottlenecks = []
     ground_truths = []
     label_name_list = list(image_lists.keys())
-    # 枚举所有的类别和每个类别中的测试图片
+    # Enumerate all categories and test images in each category
     for label_index, label_name in enumerate(label_name_list):
         category = 'testing'
         for index, unused_base_name in enumerate(
@@ -185,33 +184,33 @@ def get_test_bottlenecks(sess, image_lists, n_classes, jpeg_data_tensor,
 
 def main(_):
     global LEARNING_RATE
-    # 读取所有的图片
+    # Read all the images
     image_lists = create_image_lists(VALIDATION_PERCENTAGE, TEST_PERCENTAGE)
     n_classes = len(image_lists.keys())
     global_step = tf.Variable(0,trainable=False)
 
     with tf.Graph().as_default() as graph:
-        # 读取训练好的inception-v3模型
+        # Read the trained inception-v3 model
         with gfile.FastGFile(os.path.join(MODEL_DIR, MODEL_FILE), 'rb') as f:
             graph_def = tf.GraphDef()
             graph_def.ParseFromString(f.read())
-            # 加载inception-v3模型，并返回数据输入张量和瓶颈层输出张量
+            # Load the inception-v3 model and return the data input tensor and bottleneck layer output tensor
             bottleneck_tensor, jpeg_data_tensor = tf.import_graph_def(
                 graph_def,
                 return_elements=[
                     BOTTLENECK_TENSOR_NAME, JPEG_DATA_TENSOR_NAME
                 ])
 
-        # 定义新的神经网络输入
+        # Define new neural network inputs
         bottleneck_input = tf.placeholder(
             tf.float32, [None, BOTTLENECK_TENSOR_SIZE],
             name='BottleneckInputPlaceholder')
 
-        # 定义新的标准答案输入
+        # Define a new standard answer input
         ground_truth_input = tf.placeholder(
             tf.float32, [None, n_classes], name='GroundTruthInput')
 
-        # 定义一层全连接层解决新的图片分类问题
+        # Define a layer of fully connected layers to solve new image classification problems
         with tf.name_scope('final_training_ops'):
             weights = tf.Variable(
                 tf.truncated_normal(
@@ -220,7 +219,7 @@ def main(_):
             logits = tf.matmul(bottleneck_input, weights) + biases
             final_tensor = tf.nn.softmax(logits)
 
-        # 定义交叉熵损失函数
+        # Define the cross entropy loss function
         cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
             logits=logits, labels=ground_truth_input)
         cross_entropy_mean = tf.reduce_mean(cross_entropy)
@@ -231,7 +230,7 @@ def main(_):
         #train_step = tf.train.AdamOptimizer().minimize(
             cross_entropy_mean)
 
-        # 计算正确率
+        # Calculation accuracy
         with tf.name_scope('evaluation'):
             correct_prediction = tf.equal(
                 tf.argmax(final_tensor, 1), tf.argmax(ground_truth_input, 1))
@@ -240,31 +239,31 @@ def main(_):
 
 
 
-    # 训练过程
+    # Training process
     with tf.Session(graph=graph) as sess:
         init = tf.global_variables_initializer().run()
-        # 模型和摘要的保存目录
+        # Save the catalog of models and summary
         import time
         timestamp = str(int(time.time()))
         out_dir = os.path.abspath(
             os.path.join(os.path.curdir, 'runs', timestamp))
         print('\nWriting to {}\n'.format(out_dir))
-        # 损失值和正确率的摘要
+        # Summary of loss value and correct rate
         loss_summary = tf.summary.scalar('loss', cross_entropy_mean)
         acc_summary = tf.summary.scalar('accuracy', evaluation_step)
-        # 训练摘要
+        # train summary
         train_summary_op = tf.summary.merge([loss_summary, acc_summary])
         train_summary_dir = os.path.join(out_dir, 'summaries', 'train')
         train_summary_writer = tf.summary.FileWriter(train_summary_dir+'/train',
                                                      sess.graph)
-        # 开发摘要
+        # validation summary
         dev_summary_op = tf.summary.merge([loss_summary, acc_summary])
         dev_summary_dir = os.path.join(out_dir, 'summaries', 'dev')
         #dev_summary_writer = tf.summary.FileWriter(dev_summary_dir, sess.graph)
         dev_summary_writer = tf.summary.FileWriter(dev_summary_dir+'/val')
 
 
-        # 保存检查点
+        # save checkpoint
         checkpoint_dir = os.path.abspath(os.path.join(out_dir, 'checkpoints'))
         checkpoint_prefix = os.path.join(checkpoint_dir, 'model')
 
@@ -274,7 +273,7 @@ def main(_):
                 tf.global_variables(), max_to_keep=NUM_CHECKPOINTS)
 
         for i in range(STEPS):
-            # 每次获取一个batch的训练数据
+            # Get training data for one batch each time
             LEARNING_RATE = BASE_LEARNING_RATE / (math.exp(
                 i / (STEPS / math.log(0.1 / MIN_LEARNING_RATE))))
             train_bottlenecks, train_ground_truth = get_random_cached_bottlenecks(sess, n_classes, image_lists, BATCH,
@@ -285,11 +284,11 @@ def main(_):
                 })
 
 
-            # 保存每步的摘要
+            # Save a summary of each step
             train_summary_writer.add_summary(train_summaries, i)
 
 
-            # 在验证集上测试正确率
+            # Test correct rate on the validation set
             if i % 100 == 0 or i + 1 == STEPS:
                 validation_bottlenecks, validation_ground_truth = get_random_cached_bottlenecks(sess, n_classes,
                                                                                                 image_lists, BATCH,
@@ -312,14 +311,14 @@ def main(_):
 
 
 
-             #每隔checkpoint_every保存一次模型和测试摘要
+             #Save the model and test summary every CHECKPOINT_EVERY
             if i % CHECKPOINT_EVERY == 0:
                 dev_summary_writer.add_summary(dev_summaries, i)
                 path = saver.save(sess, checkpoint_prefix, global_step=i)
 
                 #print('Saved model checkpoint to {}\n'.format(path))
 
-        # 最后在测试集上测试正确率
+        # Finally test the correct rate on the test set
         test_bottlenecks, test_ground_truth = get_test_bottlenecks(
             sess, image_lists, n_classes, jpeg_data_tensor, bottleneck_tensor)
         test_accuracy = sess.run(
@@ -330,7 +329,7 @@ def main(_):
             })
         print('Final test accuracy = %.1f%%' % (test_accuracy * 100))
 
-        # 保存标签
+        # save label
         output_labels = os.path.join(out_dir,'label.txt')
         with tf.gfile.FastGFile(output_labels, 'w') as f:
             keys = list(image_lists.keys())
