@@ -38,5 +38,5 @@ eval2.py is used for batch prediction and calculating accuracy, specificity, sen
 eval3.py is used to save the probability of the model predicting each piece
 roc_curve.py draws the ROC curve and calculates the AUC
 
-
+If you don't understand, you can contact me via email.My email is mylovechenxiao@qq.com
 
